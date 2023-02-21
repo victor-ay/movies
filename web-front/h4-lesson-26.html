@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <title>Document</title>
+
+    <script>
+        window.onload = () => {
+            console.log('loaded')
+            remainTime = localStorage.getItem('remainTime')
+            
+            console.log('remainTime = ' + remainTime)
+
+            timerStartTime = localStorage.getItem('timerStartTime')
+            t2 = parseInt(timerStartTime) + remainTime*1000
+            timeNow = Date.now()
+
+            inputTime = document.getElementById('inputTime')
+            congrats = document.getElementById('congrats')
+            startBtn = document.getElementById('startBtn')
+            timerRunDiv = document.getElementById('timerRunDiv')
+            remainTimeHolder = document.getElementById('remainTimeHolder')
+
+            timerRunDiv.classList.remove('d-none')
+            startBtn.setAttribute('disabled', '')
+            inputTime.setAttribute('disabled', '')
+
+
+            if (timeNow < t2) {
+                console.log('inside if')
+                countDown()
+
+            } else {
+                localStorage.setItem('remainTime', 0)
+                enableGroup()
+                inputTime.onchange = () =>{
+                    // console.log('yes')
+                    congrats.classList.add('d-none')
+                    if (inputTime.value > 0) {
+                        startBtn.removeAttribute('disabled')
+                    }else{
+                        startBtn.setAttribute('disabled','')
+                    }
+                }
+
+                startBtn.onclick = () =>{
+                    localStorage.setItem('timerStartTime', Date.now() )
+                    disableGroup()
+                    remainTimeHolder.value = inputTime.value
+                    remainTime = inputTime.value
+                    countDown()
+                    
+                }
+            }
+        }
+
+        function disableGroup() {
+            timerRunDiv.classList.remove('d-none')
+            startBtn.setAttribute('disabled', '')
+            inputTime.setAttribute('disabled', '')
+        }
+
+        function enableGroup() {
+            inputTime.removeAttribute('disabled')
+                timerRunDiv.classList.add('d-none')
+                if (inputTime.value > 0) {
+                    startBtn.removeAttribute('disabled')
+                }
+        }
+
+        function countDown() {
+            timerInterval = setInterval(
+                        () => {
+                            
+                            remainTime = remainTime - 1
+                            remainTimeHolder.value = parseInt(remainTime)
+                            console.log( 'remained time = ' + remainTime )
+                            localStorage.setItem('remainTime', remainTime )
+                            
+                            if (remainTime == 0) {
+                                clearInterval(timerInterval)
+                                timerRunDiv.classList.add('d-none')
+                                inputTime.removeAttribute('disabled')
+                                console.log( '====================' )
+                                congrats.classList.remove('d-none')
+                            }
+
+                        },
+                         1000
+                        )
+        }
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Let's play</h1>
+        <div class="d-flex w-75">
+            <input id="inputTime"  class="form-control w-50" type="number" placeholder="Input time in seconds" min="1" max="60" value="5">
+            <button id="startBtn" class="btn btn-dark" style="margin-left: 10px;"  disabled>Start Timer</button>
+        </div>
+        <br>
+
+        <div id="timerRunDiv" class="d-inline-flex d-none">
+            <h4 class="mr-5">Timer. Remained</h4>
+            <input id="remainTimeHolder" class="p-auto w-25 border-0 rounded-3 bg-light bg-gradient" style="margin-left: 10px;" type="number" disabled>
+        </div>
+        
+        <p id="congrats" class="d-none">Congrats. End of the timer.</p>
+
+    </div>
+
+</body>
+</html>

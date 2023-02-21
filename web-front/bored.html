@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    
+
+    <!-- Latest compiled and minified CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+
+    <link rel="stylesheet" href="styles/bored_style.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script>
+
+        var searchedPromptglob
+        var jsonResultGlobe
+        var totalCardsOnDashboard = 0
+        var listOfItemsKey =[]
+
+        function onPageLoaded(event) {
+            onFreeToggled(event)
+            getNumOfParticipants(event)
+        }
+
+        function onFreeToggled(event) {
+            let freeSwitch = document.getElementById("freeSwitch")
+            let priceView = document.getElementById("priceInserted")
+
+
+            if (freeSwitch.checked) {
+                console.log("Free switch -> checked")
+                priceView.disabled = true
+                return true
+            } else {
+                console.log("Free switch -> Not checked")
+                priceView.disabled = false
+                return false
+            }
+        }
+
+        function getNumOfParticipants(event) {
+            let part = document.getElementById("participants")
+            let partView = document.getElementById("participantsView")
+
+            partView.value = part.value
+            return partView.value
+        }
+
+        function typeOfActivity(event) {
+            selectedActivity = document.getElementById("activity")
+            return selectedActivity.value
+        }
+
+
+
+        function showDummyCards() {
+            if (totalCardsOnDashboard>0) {
+                const savedCardBaseDummy =document.getElementById("savedCardBase")
+                savedCardBaseDummy.style.display = "none";
+            } else {
+                const savedCardBaseDummy =document.getElementById("savedCardBase")
+                savedCardBaseDummy.style.display = "block";
+            }
+            
+        }
+
+        function getActivityFromAPI(event) {
+            event.preventDefault();
+            const numOfParticipants = getNumOfParticipants(event)
+            const activityType = typeOfActivity(event)
+            const onFreeToggledOn = onFreeToggled(event)
+            let price
+
+            if (onFreeToggledOn) {
+                price = 0.0
+            }else{
+                priceInserted = document.getElementById("priceInserted").value
+                price = priceInserted/100
+            }
+
+            if (activityType == '') {
+                console.log("got null activity")
+            }
+            console.log("Participants:",numOfParticipants)
+            console.log("Activity:",activityType)
+            console.log("Price:",price)
+
+            baseBoredUrl = "http://www.boredapi.com/api/activity?"
+            finalBoredUrl = baseBoredUrl 
+                                +'type='+activityType
+                                +'&participants='+numOfParticipants
+                                +'&maxprice='+price
+
+            console.log(finalBoredUrl)
+
+            // Prompt of the searched result [Left side]
+            // <small class="text-muted" id="resultsSearchedPrompt">Relax | 2 persons | $ FREE</small>
+            // Relax | 2 persons | $ FREE
+                let promptPersonTxt = ' persons'
+                if (numOfParticipants == 1) {
+                    promptPersonTxt = ' person'
+                }
+
+                let promptPriceTxt = ' $ FREE'
+                if (price > 0) {
+                    promptPriceTxt = ' $ ' + price*100
+                }
+                const searchedPrompt = activityType + ' | ' + numOfParticipants + promptPersonTxt + ' | ' + promptPriceTxt
+                searchedPromptGlob = searchedPrompt
+                document.getElementById("resultsSearchedPrompt").innerHTML=searchedPrompt
+
+            
+            fetch(finalBoredUrl)
+                        .then((response) => response.json())
+                        .then((json) => {
+                            
+                            if (json.error) {
+                                document.getElementById('errorPromt').innerHTML=json.error
+
+                                
+
+                            } else {
+                                jsonResultGlobe = json
+                                createSearchResult(json)
+                                
+                            }
+
+
+                        })
+                        .catch((error) => {
+                            console.error(error)
+                            document.getElementById('errorPromt').innerHTML = "Error occurred"
+                        })
+                    console.log("sent request")
+
+        }
+
+        function createElement(elementName, listOfClasses, dictOfStyles, onActionDict) {
+            const elemType = document.createElement(elementName)
+            
+            for (const klass of listOfClasses) {
+                // console.log(`${klass}`);
+                elemType.classList.add(klass);
+            }
+
+            for (const property in dictOfStyles){
+                elemType.style[property] = dictOfStyles[property];
+            }
+            
+            for (const action in onActionDict){
+                console.log(`Action: ${action}, Method: ${onActionDict[action]}`);
+                elemType.addEventListener(action, onActionDict[action]);
+            }
+            // elemType.addEventListener("click", addActivityToMyList);
+            
+
+            return elemType
+        }
+
+        function createSearchResult(jsonResult) {
+            // <div class="list-group-item" style="display: flex;">
+            //     <li style="list-style-type:none">Sit in the dark and listen to your favorite music with no distractions</li>
+            //     <button class="btn" style="margin-left: auto;"><i class="fa fa-plus-circle icon_card" aria-hidden="true"></i></button>
+            // </div>
+            const resultListContainer =document.getElementById("resultListContainer")
+            const div1 = createElement("div",["list-group-item"],{display: "flex"}, {})
+            const li1 = createElement("li",[],{listStyleType: "none"}, {})
+            const buttont1 = createElement("button", ["btn"], {marginLeft: "auto"}, {"click": () => addActivityToMyList(jsonResult)})
+            buttont1.onclick = function() { this.disabled=true };
+
+            const icon1 = createElement("i", ["fa","fa-plus-circle","icon_card"], {marginLeft: "auto"}, {})
+
+            buttont1.appendChild(icon1)
+            li1.innerHTML=jsonResult.activity
+            div1.appendChild(li1)
+            div1.appendChild(buttont1)
+            resultListContainer.appendChild(div1)
+        }
+
+
+        function addActivityToMyList(jsonResult) {
+            
+            // <div class="card_container" id="cardContainer">
+            // <div class="card mx-3 mb-3" style="width: 18rem;" id="savedCardBase">
+            //     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949" class="card-img-top" alt="...">
+            //     <div class="card-body">
+            //         <h5 class="cardTitle">Activity suggestion will be presented here</h5>
+            //         <p class="cardText">Relax | 2 persons | $ FREE</p>
+            //         <div id="cardActionDiv" style="display: flex; margin: auto;">
+            //              <button class="btn btn-outline-danger mr-5" >Remove</button>
+            //              <a id="cardLinkButton" href="#" target="_blank" class="btn btn-primary" style="margin-left: 10px;">Go to</a>
+            //         </div>
+                    
+            //     </div>
+            // </div>
+
+
+
+
+            totalCardsOnDashboard = totalCardsOnDashboard+1
+            showDummyCards()
+
+            const cardContainer =document.getElementById("cardContainer")
+            const savedCardBase = createElement("div",["card", "mx-3", "mb-3"],{width: "18rem"}, {})
+            const cardImg = createElement("img",["card-img-top"],{}, {})
+            cardImg.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949"
+            const cardBody = createElement("div",["card-body"],{}, {})
+            const cardTitle = createElement("h5",["card-title"],{}, {})
+            // cardTitle.innerHTML=jsonResultGlobe.activity
+            cardTitle.innerHTML=jsonResult.activity
+            const cardText = createElement("p",["card-text"],{}, {})
+            cardText.innerHTML=searchedPromptGlob
+            const cardActionDiv = createElement("div",[],{display: "flex", margin: "auto" }, {})
+            const buttonRemove = createElement("button",["btn", "btn-outline-danger", "mr-5"],{}, {})
+            buttonRemove.innerHTML="Remove"
+            buttonRemove.onclick = function() { 
+                savedCardBase.remove() 
+                totalCardsOnDashboard = totalCardsOnDashboard-1
+                showDummyCards()
+            };
+
+            
+            // Assembling <div id="cardActionDiv" style="display: flex; margin: auto;">
+            cardActionDiv.appendChild(buttonRemove)
+
+            if (jsonResult.link != '') {
+                const cardLinkButton = createElement("a",["btn", "btn-primary", "mr-5"],{marginLeft:"10px"}, {})
+                cardLinkButton.href = jsonResult.link
+                cardLinkButton.setAttribute('target', '_blank');
+                cardLinkButton.innerHTML="Link"
+
+                cardActionDiv.appendChild(cardLinkButton)
+            }
+
+            // Assembling <div class="cardBody">
+            cardBody.appendChild(cardTitle)
+            cardBody.appendChild(cardText)
+            cardBody.appendChild(cardActionDiv)
+
+            // Assembling <div class="card mx-3 mb-3" style="width: 18rem;" id="savedCardBase">
+            savedCardBase.appendChild(cardImg)
+            savedCardBase.appendChild(cardBody)
+
+            // Assembling <div class="card_container" id="cardContainer">
+            cardContainer.append(savedCardBase)
+
+
+            
+            // let personTextType
+            // if (jsonResult.participants == 1) {
+                
+            // }
+
+            // cardText.innerHTML = jsonResult.type + ' | ' + jsonResult.participants + 
+        }
+
+    </script>
+
+</head>
+<body onload="onPageLoaded()">
+    <div class="container pt-3">
+        <form action="" onsubmit="getActivityFromAPI(event)" class="flex-container mt-5">
+
+            <div class="my-3 mx-2">
+                <select class="form-select" id="activity" onchange="typeOfActivity(event)"  required>
+                    <option value="">Select type of activity</option>
+                    <option value="education">Education</option>
+                    <option value="recreational">Recreational</option>
+                    <option value="social">Social</option>
+                    <option value="diy">DIY</option>
+                    <option value="charity">Charity</option>
+                    <option value="cooking">Cooking</option>
+                    <option value="relaxation">Relaxation</option>
+                    <option value="music">Music</option>
+                    <option value="busywork">Busywork</option>
+                  </select>
+            </div>
+            <div  class="my-3 mx-2">
+                <input type="number" class="form-control" id="participantsView" disabled min="1" max="10"  >
+                <div class="mt-2 ml-1">
+                    <input type="range" name="participants" id="participants" min = "1" max = "10" step="1" class="mt-1" value="1" onchange ="getNumOfParticipants()" required>
+                </div>
+            </div>
+            <div class="my-3 mx-2">
+                <input type="number" class="form-control" id="priceInserted" placeholder="$ Price" name="price" min = "1" max="100" style="min-width: 100px;" required>
+                <div class="form-check form-switch mt-2 ml-1">
+                    <input class="form-check-input" type="checkbox" id="freeSwitch" name="freeSwitch" value="yes" onchange="onFreeToggled(event)"  checked>
+                    <label class="form-check-label ml-3" for="mySwitch" >FREE</label>
+                </div>
+            </div>
+
+            <!-- <div class=" my-3 mx-2 ">
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <div class="input-group-text">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="mySwitch" name="darkmode" value="no" >
+                            <label class="form-check-label ml-3" for="mySwitch">FREE</label>
+                        </div>
+                    </div>
+                    <input type="number" class="form-control" aria-label="" min = "1" max="10">
+                </div>
+            </div> -->
+
+
+            <div class="my-3 mx-3">
+                <button type="submit" class="btn btn-primary">Show me activity</button>
+            </div>
+            
+        </form>
+
+        <p id="errorPromt" style="color:red; background-color: gainsboro;"  class="px-3"></p>
+        <div class="row mt-5">
+            <div class="col-sm-3 p-1" id="searchResultColumn" >
+                <div class="card" style="width: 18rem;">
+                    <div class="card-header" id="resultsHeader">
+                      <h5>Results</h5>
+                      <!-- <small class="text-muted" id="resultsSearchedPrompt">Relax | 2 persons | $ FREE</small> -->
+                      <small class="text-muted" id="resultsSearchedPrompt">Searched prompt</small>
+                    </div>
+                    <ul class="list-group list-group-flush" id="resultListContainer">
+                        <!-- <div class="list-group-item" style="display: flex;">
+                            <li style="list-style-type:none">Sit in the dark and listen to your favorite music with no distractions</li>
+                            <button class="btn" style="margin-left: auto;" onclick="addActivityToMyList()"><i class="fa fa-plus-circle icon_card" aria-hidden="true"></i></button>
+                        </div> -->
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-9 p-1" id="card-column">
+                <div class="card_container" id="cardContainer">
+                    <!-- <div class="card mx-3 mb-3" style="width: 18rem;">
+                        <img src="data:image/jpeg;base64,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" class="card-img-top" alt="...">
+                        <div class="card-body">
+                          <h5 class="card-title">Sit in the dark and listen to your favorite music with no distractions</h5>
+                          <p class="card-text">Relax | 2 persons | $ FREE</p>
+                          <a href="#" class="btn btn-primary">Remove</a>
+                        </div>
+                    </div> -->
+                    <div class="card mx-3 mb-3" style="width: 18rem;" id="savedCardBase">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949" class="card-img-top" alt="...">
+                        <div class="card-body">
+                          <h5 class="card-title">Activity suggestion will be presented here</h5>
+                          <p class="card-text">Relax | 2 persons | $ FREE</p>
+                          <div id="cardActionDiv" style="display: flex; margin: auto;">
+                            <button class="btn btn-outline-danger mr-5" disabled>Remove</button>
+                            <a id="cardLinkButton" href="#" target="_blank" class="btn btn-primary" style="margin-left: 10px;">Go to</a>
+                          </div>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+
+    </div>
+
+</body>
+</html>

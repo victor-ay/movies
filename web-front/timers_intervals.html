@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script>
+        let timerId = -1
+        function start(event) {
+            seconds = document.getElementById('input_sec').value
+            console.log('got from input_sec', seconds)
+            timerId = setTimeout(
+                () => document.getElementById('finished').innerText = 'Finished to count down [' + seconds + '] seconds'
+                ,
+                seconds *1000
+            )
+        }
+
+        function cancel() {
+            if (timerId != -1) {
+                document.getElementById('finished').innerText = 'Timer was interrupted'
+                clearTimeout(timerId)
+                timerId = -1
+                
+            }
+            
+        }
+    </script>
+</head>
+<body>
+    <input type="number" value="3" id="input_sec">
+    <button onclick="start(event)">Start timer</button>
+    <button onclick="cancel()" id="cancel_btn">Cancel timer</button>
+    <p id="finished"></p>
+</body>
+</html>

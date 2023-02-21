@@ -1,0 +1,27 @@
+.flex-container{
+    display: flex;
+    
+}
+.card-horizontal {
+    display: flex;
+    flex: 1 1 auto;
+}
+
+.icon_card {
+    font-size:20px;
+    color:#2196F3;
+}
+
+.card_container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.card-title {
+    height: 3.6em !important;
+    text-overflow: ellipsis;
+}
+
+.btn:disabled {
+    border: none;
+}
